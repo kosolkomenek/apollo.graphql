@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, UserInputError } = require('apollo-server');
 
 // A schema is a collection of type definitions (hence "typeDefs")
 // that together define the "shape" of queries that are executed against
@@ -13,25 +13,17 @@ const typeDefs = gql`
     category: [String]
   }
 
+  type Mutation {
+    updatePrice(name:String, price:String): product
+  }
+
   # The "Query" type is special: it lists all of the available queries that
   # clients can execute, along with the return type for each. In this
   # case, the "books" query returns an array of zero or more Books (defined above).
   type Query {
-    products: [product]
+    product(name:String): product
   }
 `;  
-
-const books = [
-    {
-      title: 'The Awakening',
-      author: 'Kate Chopin',
-    },
-    {
-      title: 'City of Glass',
-      author: 'Paul Auster',
-    },
-  ];
-  
 
 const products = [{
     name: "Ninetendo Switch",
@@ -53,11 +45,22 @@ const products = [{
 // Resolvers define the technique for fetching the types defined in the
 // schema. This resolver retrieves books from the "books" array above.
 const resolvers = {
-  Query: {
-    products: () => products,
+  Query:{
+    product(parent, args, context, info){
+      return products.find(product => product.name === args.name)
+    }
   },
-};
-  
+  Mutation:{ 
+    updatePrice:async (parent, args, context, info)=>{
+      const test =  products.find(product => product.name === args.name)
+      if (test) {
+        test.price = args.price 
+      return test
+      }
+    }
+  }
+}
+
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({ typeDefs, resolvers });
